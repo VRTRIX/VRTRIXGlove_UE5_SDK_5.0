@@ -1,0 +1,36 @@
+{
+	"FileVersion": 3,
+	"Version": 1,
+	"VersionName": "1.2.0",
+	"FriendlyName": "VRTRIXGlove",
+	"Description": "VRTRIX Data Glove Streaming Plugin",
+	"Category": "Input Devices",
+	"CreatedBy": "VRTRIX, Inc",
+	"CreatedByURL": "",
+	"DocsURL": "",
+	"MarketplaceURL": "",
+	"SupportURL": "",
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"Installed": true,
+  "Modules": [
+    {
+      "Name": "VRTRIXGlove",
+      "Type": "Runtime",
+      "WhitelistPlatforms": [ "Win64", "Win32" ],
+      "LoadingPhase": "PostConfigInit"
+    },
+    {
+      "Name": "VRTRIXGloveEditor",
+      "Type": "Developer",
+      "LoadingPhase": "PostConfigInit"
+    }
+  ],
+
+   "Plugins": [
+     {
+       "Name": "SteamVR",
+       "Enabled": true
+     }
+   ]
+}
