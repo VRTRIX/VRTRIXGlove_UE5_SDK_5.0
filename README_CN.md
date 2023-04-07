@@ -1,7 +1,7 @@
 # 功能介绍 [English][english]
 
 <p align="center">
-  <img src="https://github.com/VRTRIX/VRTRIXGlove_Unity3D_SDK/blob/master/docs/img/digital_glove.png"/>
+  <img src="https://github.com/VRTRIX/VRTRIXGlove_Unity3D_SDK/blob/client/docs/img/digital_glove.png"/>
 </p>
 
 VRTRIX 数据手套基于高精度惯性传感器，定位手指各关节和手腕动作与姿态。每只手套上分布有6个传感器，双手共12个，可以实时高精度低延迟输出全手所有关节的运动姿态。
@@ -60,6 +60,6 @@ VRTRIX 惯性传感器模块采用九轴传感器（3轴陀螺仪，3轴加速�
 - 请注意由于我们不断在更新我们的插件，该github仓库中的内容可能包含有正在开发的模块代码，临时性的代码，或者一些已经废弃的接口，如果进行开发，请直接前往我们github的[release页面][devsite]下载最新的稳定版本UE4插件。
 
 [devsite]:https://github.com/VRTRIX/VRTRIXGlove_UE5_SDK/releases "VRTRIX Glove UE5 Plugin Release site"
-[english]: https://github.com/VRTRIX/VRTRIXGlove_UE5_SDK/blob/master/README.md "english"
+[english]: https://github.com/VRTRIX/VRTRIXGlove_UE5_SDK/blob/UE5.0_PRO/README.md "english"
 [doc]: https://github.com/VRTRIX/VRTRIXGlove_UE4_SDK/blob/master/docs/VRTRIX%20Data%20Glove%20UE4%20SDK%20Tutorial.pdf "VRTRIX Glove UE5 Doc"
 [driver]: https://github.com/VRTRIX/VRTRIXGlove_UE4_SDK/tree/master/drivers

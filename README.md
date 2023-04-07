@@ -60,7 +60,7 @@ Following are the demo scenes that driving hand model in UE4 with VRTRIX Data Gl
 
 - Note that this repository may contains code for work-in-progress modules, tentative modules, or older modules that may be unsupported.We recommend using the release version packages available on the [our release page][devsite].
 
-[chinese]: https://github.com/VRTRIX/VRTRIXGlove_UE5_SDK/blob/master/README_CN.md "chinese"
+[chinese]: https://github.com/VRTRIX/VRTRIXGlove_UE5_SDK/blob/UE5.0_PRO/README_CN.md "chinese"
 [devsite]: https://github.com/VRTRIX/VRTRIXGlove_UE5_SDK/releases "VRTRIX Glove UE5 Release site"
 [doc]: https://github.com/VRTRIX/VRTRIXGlove_UE4_SDK/blob/master/docs/VRTRIX%20Data%20Glove%20UE4%20SDK%20Tutorial.pdf "VRTRIX Glove UE5 Doc"
 [driver]: https://github.com/VRTRIX/VRTRIXGlove_UE4_SDK/tree/master/drivers
