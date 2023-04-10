@@ -474,7 +474,7 @@ public:
 		Hand HandType = Hand::Left;
 	//Which hand you want to bond with your model,make sure the receiver for selected hand is connected
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Developer_Configurable")
-		HardwareVersion HardwareVersion = HardwareVersion::PRO;
+		HardwareVersion HardwareVersion = HardwareVersion::PRO11;
 	//Server ip address to fetch glove data
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Developer_Configurable")
 		FString ServerIP = "127.0.0.1";
@@ -511,7 +511,7 @@ public:
 		float ThumbMiddleSlerp = 0.7;
 	//The model finger spacing when advanced mode is NOT enabled.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Developer_Configurable")
-		float FingerSpacing = 5;
+		float FingerSpacing = 2;
 	//The model final finger spacing when four fingers are fully bended.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Developer_Configurable")
 		float FinalFingerSpacing = 2;
