@@ -511,14 +511,14 @@ public:
 		float ThumbMiddleSlerp = 0.7;
 	//The model finger spacing when advanced mode is NOT enabled.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Developer_Configurable")
-		float FingerSpacing = 8;
+		float FingerSpacing = 5;
 	//The model final finger spacing when four fingers are fully bended.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Developer_Configurable")
 		float FinalFingerSpacing = 2;
 
 	//The model finger & wrist offset.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Developer_Configurable")
-		FRotator WristFingerOffset = FRotator(90, -90, 0);
+		FRotator WristFingerOffset = FRotator(0, 0, 0);
 	//The wrist tracker offset
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Developer_Configurable")
 		FVector WristTrackerOffset = FVector(-4.5f, 0, 0);
