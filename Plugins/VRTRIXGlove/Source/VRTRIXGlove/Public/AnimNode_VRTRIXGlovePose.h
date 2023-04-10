@@ -28,6 +28,6 @@ struct VRTRIXGLOVE_API FAnimNode_VRTRIXGlovePose : public FAnimNode_Base
 	// End of FAnimNode_Base interface
 
 private:
-	UGloveComponent* LHGloveComponent;
-	UGloveComponent* RHGloveComponent;
+	TWeakObjectPtr<UGloveComponent> LHGloveComponent;
+	TWeakObjectPtr<UGloveComponent> RHGloveComponent;
 };

@@ -16,7 +16,8 @@ void FAnimNode_VRTRIXGlovePose::Initialize_AnyThread(const FAnimationInitializeC
 		//UE_LOG(LogVRTRIXGlovePlugin, Display, TEXT("[GLOVES PULGIN] AnimInstance is NULL."));
 		return;
 	}
-	TArray<UActorComponent*> Comps = anim->GetOwningActor()->GetComponentsByClass(UGloveComponent::StaticClass());
+	TArray<UActorComponent*> Comps;
+	anim->GetOwningActor()->GetComponents(UGloveComponent::StaticClass(), Comps);
 	for (auto& component : Comps)
 	{
 		UGloveComponent* glove = dynamic_cast<UGloveComponent*> (component);
@@ -30,13 +31,14 @@ void FAnimNode_VRTRIXGlovePose::Update_AnyThread(const FAnimationUpdateContext &
 {
 	GetEvaluateGraphExposedInputs().Execute(Context);
 
-	if (LHGloveComponent == nullptr || RHGloveComponent == nullptr) {
+	if (!LHGloveComponent.IsValid() || !RHGloveComponent.IsValid()) {
 		UAnimInstance* anim = Context.AnimInstanceProxy->GetSkelMeshComponent()->GetAnimInstance();
 		if (anim == nullptr || anim->GetOwningActor() == nullptr) {
 			//UE_LOG(LogVRTRIXGlovePlugin, Display, TEXT("[GLOVES PULGIN] AnimInstance is NULL."));
 			return;
 		}
-		TArray<UActorComponent*> Comps = anim->GetOwningActor()->GetComponentsByClass(UGloveComponent::StaticClass());
+		TArray<UActorComponent*> Comps;
+		anim->GetOwningActor()->GetComponents(UGloveComponent::StaticClass(), Comps);
 		for (auto& component : Comps)
 		{
 			UGloveComponent* glove = dynamic_cast<UGloveComponent*> (component);
@@ -50,26 +52,28 @@ void FAnimNode_VRTRIXGlovePose::Update_AnyThread(const FAnimationUpdateContext &
 void FAnimNode_VRTRIXGlovePose::Evaluate_AnyThread(FPoseContext & Output)
 {
 	//Output.ResetToRefPose();
-	if (LHGloveComponent == nullptr || RHGloveComponent == nullptr) return;
-	if (!LHGloveComponent->bIsDataGloveConnected || !RHGloveComponent->bIsDataGloveConnected) return;
+	if (!LHGloveComponent.IsValid() || !RHGloveComponent.IsValid()) return;
+	UGloveComponent* LeftGlove = LHGloveComponent.Get();
+	UGloveComponent* RightGlove = RHGloveComponent.Get();
 
+	if (!LeftGlove->bIsDataGloveConnected || !RightGlove->bIsDataGloveConnected) return;
 
 	FCSPose<FCompactPose> pose;
 	pose.InitPose(&Output.Pose.GetBoneContainer());
 	const FBoneContainer Container = pose.GetPose().GetBoneContainer();
 
 	TArray<FQuat> LHFingerRotation, RHFingerRotation;
-	LHFingerRotation.Init(FQuat::Identity, LHGloveComponent->BoneIndexToBoneNameMap.Num());
-	RHFingerRotation.Init(FQuat::Identity, RHGloveComponent->BoneIndexToBoneNameMap.Num());
+	LHFingerRotation.Init(FQuat::Identity, LeftGlove->BoneIndexToBoneNameMap.Num());
+	RHFingerRotation.Init(FQuat::Identity, RightGlove->BoneIndexToBoneNameMap.Num());
 
-	if (LHGloveComponent->BoneIndexToBoneNameMap.Num() == VRTRIX::Joint_MAX && RHGloveComponent->BoneIndexToBoneNameMap.Num() == VRTRIX::Joint_MAX) {
-		for (int i = 0; i < LHGloveComponent->BoneIndexToBoneNameMap.Num(); i++) {
-			LHFingerRotation[i] = LHGloveComponent->rotation[i].Quaternion();
-			RHFingerRotation[i] = RHGloveComponent->rotation[i].Quaternion();
+	if (LeftGlove->BoneIndexToBoneNameMap.Num() == VRTRIX::Joint_MAX && RightGlove->BoneIndexToBoneNameMap.Num() == VRTRIX::Joint_MAX) {
+		for (int i = 0; i < LeftGlove->BoneIndexToBoneNameMap.Num(); i++) {
+			LHFingerRotation[i] = LeftGlove->rotation[i].Quaternion();
+			RHFingerRotation[i] = RightGlove->rotation[i].Quaternion();
 		}
 	}
-	else if (LHGloveComponent->BoneIndexToBoneNameMap.Num() == VRTRIX::Joint_MAX + 4 && RHGloveComponent->BoneIndexToBoneNameMap.Num() == VRTRIX::Joint_MAX + 4) {
-		for (int i = 0; i < LHGloveComponent->BoneIndexToBoneNameMap.Num(); i++) {
+	else if (LeftGlove->BoneIndexToBoneNameMap.Num() == VRTRIX::Joint_MAX + 4 && RightGlove->BoneIndexToBoneNameMap.Num() == VRTRIX::Joint_MAX + 4) {
+		for (int i = 0; i < LeftGlove->BoneIndexToBoneNameMap.Num(); i++) {
 			int QuatIndex = 0;
 			if (i == 4 || i == 8 || i == 12 || i == 16) QuatIndex = 0;
 			else if (i < 4) QuatIndex = i;
@@ -77,15 +81,15 @@ void FAnimNode_VRTRIXGlovePose::Evaluate_AnyThread(FPoseContext & Output)
 			else if (i < 12) QuatIndex = i - 2;
 			else if (i < 16) QuatIndex = i - 3;
 			else QuatIndex = i - 4;
-			LHFingerRotation[i] = LHGloveComponent->rotation[QuatIndex].Quaternion();
-			RHFingerRotation[i] = RHGloveComponent->rotation[QuatIndex].Quaternion();
+			LHFingerRotation[i] = LeftGlove->rotation[QuatIndex].Quaternion();
+			RHFingerRotation[i] = RightGlove->rotation[QuatIndex].Quaternion();
 		}
 	}
 	else return;
 
-	for (int i = 0; i < LHGloveComponent->BoneIndexToBoneNameMap.Num(); i++)
+	for (int i = 0; i < LeftGlove->BoneIndexToBoneNameMap.Num(); i++)
 	{
-		int32 MeshBoneIndex = Container.GetPoseBoneIndexForBoneName(LHGloveComponent->BoneIndexToBoneNameMap[i]);
+		int32 MeshBoneIndex = Container.GetPoseBoneIndexForBoneName(LeftGlove->BoneIndexToBoneNameMap[i]);
 		//UE_LOG(LogVRTRIXGlovePlugin, Display, TEXT("[GLOVES PULGIN] LH MeshBoneIndex: %d."), MeshBoneIndex);
 		if (MeshBoneIndex != INDEX_NONE)
 		{
@@ -97,9 +101,9 @@ void FAnimNode_VRTRIXGlovePose::Evaluate_AnyThread(FPoseContext & Output)
 		}
 	}
 
-	for (int i = 0; i < RHGloveComponent->BoneIndexToBoneNameMap.Num(); i++)
+	for (int i = 0; i < RightGlove->BoneIndexToBoneNameMap.Num(); i++)
 	{
-		int32 MeshBoneIndex = Container.GetPoseBoneIndexForBoneName(RHGloveComponent->BoneIndexToBoneNameMap[i]);
+		int32 MeshBoneIndex = Container.GetPoseBoneIndexForBoneName(RightGlove->BoneIndexToBoneNameMap[i]);
 		//UE_LOG(LogVRTRIXGlovePlugin, Display, TEXT("[GLOVES PULGIN] RH MeshBoneIndex: %d."), MeshBoneIndex);
 		if (MeshBoneIndex != INDEX_NONE)
 		{

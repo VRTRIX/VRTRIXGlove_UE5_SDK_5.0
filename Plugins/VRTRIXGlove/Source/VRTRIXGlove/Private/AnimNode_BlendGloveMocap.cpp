@@ -19,7 +19,8 @@ void FAnimNode_BlendGloveMoCap::Initialize_AnyThread(const FAnimationInitializeC
 		//UE_LOG(LogVRTRIXGlovePlugin, Display, TEXT("[GLOVES PULGIN] AnimInstance is NULL."));
 		return;
 	}
-	TArray<UActorComponent*> Comps = anim->GetOwningActor()->GetComponentsByClass(UGloveComponent::StaticClass());
+	TArray<UActorComponent*> Comps;
+	anim->GetOwningActor()->GetComponents(UGloveComponent::StaticClass(), Comps);
 	for (auto& component : Comps)
 	{
 		UGloveComponent* glove = dynamic_cast<UGloveComponent*> (component);
@@ -41,13 +42,14 @@ void FAnimNode_BlendGloveMoCap::Update_AnyThread(const FAnimationUpdateContext &
 	MoCap.Update(Context);
 	GetEvaluateGraphExposedInputs().Execute(Context);
 
-	if (LHGloveComponent == nullptr || RHGloveComponent == nullptr) {
+	if (!LHGloveComponent.IsValid() || !RHGloveComponent.IsValid()) {
 		UAnimInstance* anim = Context.AnimInstanceProxy->GetSkelMeshComponent()->GetAnimInstance();
 		if (anim == nullptr || anim->GetOwningActor() == nullptr) {
 			//UE_LOG(LogVRTRIXGlovePlugin, Display, TEXT("[GLOVES PULGIN] AnimInstance is NULL."));
 			return;
 		}
-		TArray<UActorComponent*> Comps = anim->GetOwningActor()->GetComponentsByClass(UGloveComponent::StaticClass());
+		TArray<UActorComponent*> Comps;
+		anim->GetOwningActor()->GetComponents(UGloveComponent::StaticClass(), Comps);
 		for (auto& component : Comps)
 		{
 			UGloveComponent* glove = dynamic_cast<UGloveComponent*> (component);
@@ -62,30 +64,33 @@ void FAnimNode_BlendGloveMoCap::Evaluate_AnyThread(FPoseContext & Output)
 {
 	MoCap.Evaluate(Output);
 
-	if (LHGloveComponent == nullptr || RHGloveComponent == nullptr) return;
-	if (!LHGloveComponent->bIsDataGloveConnected || !RHGloveComponent->bIsDataGloveConnected) return;
+	if (!LHGloveComponent.IsValid() || !RHGloveComponent.IsValid()) return;
+	UGloveComponent* LeftGlove = LHGloveComponent.Get();
+	UGloveComponent* RightGlove = RHGloveComponent.Get();
+
+	if (!LeftGlove->bIsDataGloveConnected || !RightGlove->bIsDataGloveConnected) return;
 
 	FCSPose<FCompactPose> FinalPose;
 	FinalPose.InitPose(&Output.Pose.GetBoneContainer());
 	const FBoneContainer Container = FinalPose.GetPose().GetBoneContainer();
-	
+
 	FPoseContext GloveContext(Output);
 	Glove.Evaluate(GloveContext);
 
 	int startIndex = bIsAlignWrist ? 1 : 0;
 	TArray<int32> handBoneIndex;
-	for (int i = startIndex; i < LHGloveComponent->BoneIndexToBoneNameMap.Num(); i++)
+	for (int i = startIndex; i < LeftGlove->BoneIndexToBoneNameMap.Num(); i++)
 	{
-		int32 MeshBoneIndex = Container.GetPoseBoneIndexForBoneName(LHGloveComponent->BoneIndexToBoneNameMap[i]);
+		int32 MeshBoneIndex = Container.GetPoseBoneIndexForBoneName(LeftGlove->BoneIndexToBoneNameMap[i]);
 		if (MeshBoneIndex != INDEX_NONE)
 		{
 			handBoneIndex.Push(MeshBoneIndex);
 		}
 	}
 
-	for (int i = startIndex; i < RHGloveComponent->BoneIndexToBoneNameMap.Num(); i++)
+	for (int i = startIndex; i < RightGlove->BoneIndexToBoneNameMap.Num(); i++)
 	{
-		int32 MeshBoneIndex = Container.GetPoseBoneIndexForBoneName(RHGloveComponent->BoneIndexToBoneNameMap[i]);
+		int32 MeshBoneIndex = Container.GetPoseBoneIndexForBoneName(RightGlove->BoneIndexToBoneNameMap[i]);
 		if (MeshBoneIndex != INDEX_NONE)
 		{
 			handBoneIndex.Push(MeshBoneIndex);
