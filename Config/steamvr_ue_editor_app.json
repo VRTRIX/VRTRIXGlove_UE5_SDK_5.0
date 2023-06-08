@@ -2,7 +2,7 @@
 	"source": "UE",
 	"applications": [
 		{
-			"app_key": "application.generated.ue.vrtrixgloveplugin-20979098.unrealeditor.exe",
+			"app_key": "application.generated.ue.vrtrixgloveplugin-25360045.unrealeditor.exe",
 			"launch_type": "url",
 			"url": "steam://launch/",
 			"action_manifest_path": "D:/VRTRIX/Projects/VRGlove/SDKs/UE5/VRTRIXGlove_UE5_SDK/Config/SteamVRBindings/steamvr_manifest.json",
@@ -10,7 +10,7 @@
 			{
 				"en_us":
 				{
-					"name": "VRTRIXGlovePlugin-20979098 [UE Editor]"
+					"name": "VRTRIXGlovePlugin-25360045 [UE Editor]"
 				}
 			}
 		}

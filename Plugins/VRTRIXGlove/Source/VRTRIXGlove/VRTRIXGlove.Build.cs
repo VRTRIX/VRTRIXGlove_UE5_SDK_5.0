@@ -53,8 +53,7 @@ public class VRTRIXGlove : ModuleRules
 			}
 			);
 
-        if (Target.Platform == UnrealTargetPlatform.Win64 || 
-		(Target.Platform == UnrealTargetPlatform.Linux && Target.Architecture.StartsWith("x86_64")))
+        if (Target.Platform == UnrealTargetPlatform.Win64)
 		{
 		PublicDependencyModuleNames.AddRange(
 			new string[]
