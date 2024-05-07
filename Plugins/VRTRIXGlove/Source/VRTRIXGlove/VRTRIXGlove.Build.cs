@@ -54,16 +54,6 @@ public class VRTRIXGlove : ModuleRules
 			);
 
         if (Target.Platform == UnrealTargetPlatform.Win64)
-		{
-		PublicDependencyModuleNames.AddRange(
-			new string[]
-			{
-            "SteamVR",
-            "OpenVR",
-			});
-		}
-
-        if (Target.Platform == UnrealTargetPlatform.Win64)
         {
            RuntimeDependencies.Add("$(PluginDir)/Source/ThirdParty/VRTRIXGloveLibrary/x64/Release/VRTRIXDATAGLOVECLIENT.dll");
         }

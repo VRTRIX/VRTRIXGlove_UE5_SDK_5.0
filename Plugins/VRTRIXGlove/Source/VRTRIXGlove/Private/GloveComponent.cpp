@@ -4,8 +4,6 @@
 
 #include "Engine/Texture2D.h"
 #include "Engine/Engine.h"
-#include "IXRTrackingSystem.h"
-#include "IHeadMountedDisplay.h"
 
 #if WITH_EDITOR
 #include "Editor/UnrealEd/Classes/Editor/EditorEngine.h"
@@ -13,15 +11,6 @@
 
 DEFINE_LOG_CATEGORY(LogVRTRIXGlovePlugin);
 
-static FORCEINLINE FMatrix ToFMatrix(const vr::HmdMatrix34_t& tm)
-{
-	// Rows and columns are swapped between vr::HmdMatrix34_t and FMatrix
-	return FMatrix(
-		FPlane(tm.m[0][0], tm.m[1][0], tm.m[2][0], 0.0f),
-		FPlane(tm.m[0][1], tm.m[1][1], tm.m[2][1], 0.0f),
-		FPlane(tm.m[0][2], tm.m[1][2], tm.m[2][2], 0.0f),
-		FPlane(tm.m[0][3], tm.m[1][3], tm.m[2][3], 1.0f));
-}
 
 void UGloveComponent::CreateBoneIndexToBoneNameMap(FHandBonesName names)
 {
@@ -164,9 +153,6 @@ void UGloveComponent::BeginPlay()
 	//创建骨骼映射；
 	CreateBoneIndexToBoneNameMap(handBoneNames);
 	// ...
-	if (bIsVREnabled && GetTrackingSystem()) {
-		GetTrackerIndex();
-	}
 	OnConnectGloves();
 }
 
@@ -207,34 +193,34 @@ void UGloveComponent::OnReceiveNewPose(VRTRIX::Pose pose)
 				initialPoseOffset = alignmentPose * quat.Inverse();
 			}
 		}
-		else {
-			if (pose.type == VRTRIX::Hand_Left  && i == (int)VRTRIX::Wrist_Joint) {
-				FRotator tracker_rot;
-				FVector tracker_loc;
-				if (USteamVRFunctionLibrary::GetTrackedDevicePositionAndOrientation(m_LHTrackerIndex, tracker_loc, tracker_rot)) {
-					if (!bIsLOffsetCal) {
-						LWristTrackerPitchOffset = FQuat(FVector::ForwardVector, FMath::DegreesToRadians(tracker_rot.Roll + 90.0f));
-						UE_LOG(LogVRTRIXGlovePlugin, Display, TEXT("[GLOVES PULGIN] Left Hand Glove connected to channel: %d"), pose.channel);
-						bIsLOffsetCal = true;
-					}
-					FQuat target = tracker_rot.Quaternion() * LWristTrackerPitchOffset * WristTrackerRotOffset.Quaternion();
-					initialPoseOffset = target * quat.Inverse();
-				}
-			}
-			else if (pose.type == VRTRIX::Hand_Right  && i == (int)VRTRIX::Wrist_Joint) {
-				FRotator tracker_rot;
-				FVector tracker_loc;
-				if (USteamVRFunctionLibrary::GetTrackedDevicePositionAndOrientation(m_RHTrackerIndex, tracker_loc, tracker_rot)) {
-					if (!bIsROffsetCal) {
-						RWristTrackerPitchOffset = FQuat(FVector::ForwardVector, FMath::DegreesToRadians(tracker_rot.Roll - 90.0f));
-						UE_LOG(LogVRTRIXGlovePlugin, Display, TEXT("[GLOVES PULGIN] Right Hand Glove connected to channel: %d"), pose.channel);
-						bIsROffsetCal = true;
-					}
-					FQuat target = tracker_rot.Quaternion() * RWristTrackerPitchOffset * WristTrackerRotOffset.Quaternion();
-					initialPoseOffset = target * quat.Inverse();
-				}
-			}
-		}
+		//else {
+		//	if (pose.type == VRTRIX::Hand_Left  && i == (int)VRTRIX::Wrist_Joint) {
+		//		FRotator tracker_rot;
+		//		FVector tracker_loc;
+		//		if (USteamVRFunctionLibrary::GetTrackedDevicePositionAndOrientation(m_LHTrackerIndex, tracker_loc, tracker_rot)) {
+		//			if (!bIsLOffsetCal) {
+		//				LWristTrackerPitchOffset = FQuat(FVector::ForwardVector, FMath::DegreesToRadians(tracker_rot.Roll + 90.0f));
+		//				UE_LOG(LogVRTRIXGlovePlugin, Display, TEXT("[GLOVES PULGIN] Left Hand Glove connected to channel: %d"), pose.channel);
+		//				bIsLOffsetCal = true;
+		//			}
+		//			FQuat target = tracker_rot.Quaternion() * LWristTrackerPitchOffset * WristTrackerRotOffset.Quaternion();
+		//			initialPoseOffset = target * quat.Inverse();
+		//		}
+		//	}
+		//	else if (pose.type == VRTRIX::Hand_Right  && i == (int)VRTRIX::Wrist_Joint) {
+		//		FRotator tracker_rot;
+		//		FVector tracker_loc;
+		//		if (USteamVRFunctionLibrary::GetTrackedDevicePositionAndOrientation(m_RHTrackerIndex, tracker_loc, tracker_rot)) {
+		//			if (!bIsROffsetCal) {
+		//				RWristTrackerPitchOffset = FQuat(FVector::ForwardVector, FMath::DegreesToRadians(tracker_rot.Roll - 90.0f));
+		//				UE_LOG(LogVRTRIXGlovePlugin, Display, TEXT("[GLOVES PULGIN] Right Hand Glove connected to channel: %d"), pose.channel);
+		//				bIsROffsetCal = true;
+		//			}
+		//			FQuat target = tracker_rot.Quaternion() * RWristTrackerPitchOffset * WristTrackerRotOffset.Quaternion();
+		//			initialPoseOffset = target * quat.Inverse();
+		//		}
+		//	}
+		//}
 
 		rotation[i] = (i == (int)VRTRIX::Wrist_Joint) ?
 			(initialPoseOffset * quat).Rotator() :
@@ -318,21 +304,6 @@ void UGloveComponent::OnDisconnectGloves()
 	}
 }
 
-bool UGloveComponent::GetTrackingSystem()
-{
-	if (!GEngine->XRSystem.IsValid() || (GEngine->XRSystem->GetSystemName() != SteamVRSystemName))
-	{
-		UE_LOG(LogVRTRIXGlovePlugin, Error, TEXT("[GLOVES PULGIN] Unable to get tracking system."));
-		return false;
-	}
-
-	vr::HmdError HmdErr;
-	VRSystem = (vr::IVRSystem*)vr::VR_GetGenericInterface(vr::IVRSystem_Version, &HmdErr);
-	VRCompositor = (vr::IVRCompositor*)vr::VR_GetGenericInterface(vr::IVRCompositor_Version, &HmdErr);
-	if (VRSystem == NULL) UE_LOG(LogVRTRIXGlovePlugin, Error, TEXT("[GLOVES PULGIN] Unable to get tracking system."));
-	return (VRSystem != NULL);
-}
-
 void UGloveComponent::OnReconnect()
 {
 	UE_LOG(LogVRTRIXGlovePlugin, Warning, TEXT("[GLOVES PULGIN] Try to reconnect data gloves."));
@@ -407,74 +378,6 @@ void UGloveComponent::ApplyHandMoCapWorldSpaceRotation(UPoseableMeshComponent *S
 	{
 		SkinMesh->SetBoneRotationByName(BoneIndexToBoneNameMap[i], FingerWorldSpaceRotation[i], EBoneSpaces::WorldSpace);
 	}
-}
-
-void UGloveComponent::GetTrackerIndex()
-{
-	if (!VRSystem) {
-		return;
-	}
-	for (int nDevice = 0; nDevice < vr::k_unMaxTrackedDeviceCount; ++nDevice)
-	{
-		//if (VRSystem->GetTrackedDeviceClass(nDevice) == vr::TrackedDeviceClass_GenericTracker) {
-		if (VRSystem->IsTrackedDeviceConnected(nDevice)) {
-			FString renderModel;
-			EBPOVRResultSwitch result;
-			GetVRDevicePropertyString(EVRDeviceProperty_String::Prop_RenderModelName_String_1003, nDevice, renderModel, result);
-			//UE_LOG(LogVRTRIXGlovePlugin, Error, TEXT("[GLOVES PULGIN] renderModel: %s"), *renderModel);
-			if (result == EBPOVRResultSwitch::OnSucceeded) {
-				if (renderModel == "LH") m_LHTrackerIndex = nDevice;
-				if (renderModel == "RH") m_RHTrackerIndex = nDevice;
-			}
-		}
-		//}
-	}
-	UE_LOG(LogVRTRIXGlovePlugin, Display, TEXT("[GLOVES PULGIN] LHIndex: %d"), m_LHTrackerIndex);
-	UE_LOG(LogVRTRIXGlovePlugin, Display, TEXT("[GLOVES PULGIN] RHIndex: %d"), m_RHTrackerIndex);
-}
-
-FTransform UGloveComponent::ApplyTrackerOffset()
-{
-	FRotator tracker_rot;
-	FVector tracker_loc;
-
-	switch (type) {
-	case(VRTRIX::Hand_Left): {
-		if (!USteamVRFunctionLibrary::GetTrackedDevicePositionAndOrientation(m_LHTrackerIndex, tracker_loc, tracker_rot)) {
-			return FTransform::Identity;
-		}
-		break;
-	}
-	case(VRTRIX::Hand_Right): {
-		if (!USteamVRFunctionLibrary::GetTrackedDevicePositionAndOrientation(m_RHTrackerIndex, tracker_loc, tracker_rot)) {
-			return FTransform::Identity;
-		}
-		break;
-	}
-	}
-	FVector new_positon = tracker_loc + tracker_rot.Quaternion() * WristTrackerOffset;
-	return FTransform(tracker_rot, new_positon, FVector(1, 1, 1));
-}
-
-FTransform UGloveComponent::GetTrackerTransform() {
-	FRotator tracker_rot;
-	FVector tracker_loc;
-
-	switch (type) {
-	case(VRTRIX::Hand_Left): {
-		if (!USteamVRFunctionLibrary::GetTrackedDevicePositionAndOrientation(m_LHTrackerIndex, tracker_loc, tracker_rot)) {
-			return FTransform::Identity;
-		}
-		break;
-	}
-	case(VRTRIX::Hand_Right): {
-		if (!USteamVRFunctionLibrary::GetTrackedDevicePositionAndOrientation(m_RHTrackerIndex, tracker_loc, tracker_rot)) {
-			return FTransform::Identity;
-		}
-		break;
-	}
-	}
-	return FTransform(tracker_rot, tracker_loc, FVector(1, 1, 1));
 }
 
 void UGloveComponent::SetWristAlignment(FRotator alignment)
@@ -644,155 +547,6 @@ void UGloveComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActor
 	UGloveComponent::Calculate_Gesture_Event();
 	UGloveComponent::Calculate_Gesture_State();
 }
-
-static vr::ETrackedDeviceProperty VREnumToString(const FString& enumName, uint8 value)
-{
-	const UEnum* EnumPtr = FindObject<UEnum>(ANY_PACKAGE, *enumName, true);
-
-	if (!EnumPtr)
-		return vr::ETrackedDeviceProperty::Prop_Invalid;
-
-	FString EnumName = EnumPtr->GetNameStringByIndex(value).Right(4);
-
-	if (EnumName.IsEmpty() || EnumName.Len() < 4)
-		return vr::ETrackedDeviceProperty::Prop_Invalid;
-
-	return static_cast<vr::ETrackedDeviceProperty>(FCString::Atoi(*EnumName));
-}
-
-void UGloveComponent::GetVRDevicePropertyString(EVRDeviceProperty_String PropertyToRetrieve, int32 DeviceID, FString & StringValue, EBPOVRResultSwitch & Result)
-{
-
-#if !STEAMVR_SUPPORTED_PLATFORM
-	Result = EBPOVRResultSwitch::OnFailed;
-	return;
-#else
-	vr::TrackedPropertyError pError = vr::TrackedPropertyError::TrackedProp_Success;
-	vr::ETrackedDeviceProperty EnumPropertyValue = VREnumToString(TEXT("EVRDeviceProperty_String"), static_cast<uint8>(PropertyToRetrieve));
-	if (EnumPropertyValue == vr::ETrackedDeviceProperty::Prop_Invalid)
-	{
-		Result = EBPOVRResultSwitch::OnFailed;
-		return;
-	}
-	char charvalue[vr::k_unMaxPropertyStringSize];
-	uint32_t buffersize = 255;
-	uint32_t ret = VRSystem->GetStringTrackedDeviceProperty(DeviceID, EnumPropertyValue, charvalue, buffersize, &pError);
-
-	if (pError != vr::TrackedPropertyError::TrackedProp_Success)
-	{
-		Result = EBPOVRResultSwitch::OnFailed;
-		return;
-	}
-	StringValue = FString(ANSI_TO_TCHAR(charvalue));
-	Result = EBPOVRResultSwitch::OnSucceeded;
-	return;
-#endif
-}
-
-void UGloveComponent::GetVRDevicePropertyBool(EVRDeviceProperty_Bool PropertyToRetrieve, int32 DeviceID, bool & BoolValue, EBPOVRResultSwitch & Result)
-{
-#if !STEAMVR_SUPPORTED_PLATFORM
-	Result = EBPOVRResultSwitch::OnFailed;
-	return;
-#else
-	vr::TrackedPropertyError pError = vr::TrackedPropertyError::TrackedProp_Success;
-	vr::ETrackedDeviceProperty EnumPropertyValue = VREnumToString(TEXT("EVRDeviceProperty_Bool"), static_cast<uint8>(PropertyToRetrieve));
-	if (EnumPropertyValue == vr::ETrackedDeviceProperty::Prop_Invalid)
-	{
-		Result = EBPOVRResultSwitch::OnFailed;
-		return;
-	}
-	bool ret = VRSystem->GetBoolTrackedDeviceProperty(DeviceID, EnumPropertyValue, &pError);
-	if (pError != vr::TrackedPropertyError::TrackedProp_Success)
-	{
-		Result = EBPOVRResultSwitch::OnFailed;
-		return;
-	}
-	BoolValue = ret;
-	Result = EBPOVRResultSwitch::OnSucceeded;
-	return;
-
-#endif
-}
-
-void UGloveComponent::GetVRDevicePropertyFloat(EVRDeviceProperty_Float PropertyToRetrieve, int32 DeviceID, float & FloatValue, EBPOVRResultSwitch & Result)
-{
-#if !STEAMVR_SUPPORTED_PLATFORM
-	Result = EBPOVRResultSwitch::OnFailed;
-	return;
-#else
-	vr::TrackedPropertyError pError = vr::TrackedPropertyError::TrackedProp_Success;
-	vr::ETrackedDeviceProperty EnumPropertyValue = VREnumToString(TEXT("EVRDeviceProperty_Float"), static_cast<uint8>(PropertyToRetrieve));
-	if (EnumPropertyValue == vr::ETrackedDeviceProperty::Prop_Invalid)
-	{
-		Result = EBPOVRResultSwitch::OnFailed;
-		return;
-	}
-	float ret = VRSystem->GetFloatTrackedDeviceProperty(DeviceID, EnumPropertyValue, &pError);
-	if (pError != vr::TrackedPropertyError::TrackedProp_Success)
-	{
-		Result = EBPOVRResultSwitch::OnFailed;
-		return;
-	}
-	FloatValue = ret;
-	Result = EBPOVRResultSwitch::OnSucceeded;
-	return;
-
-#endif
-}
-
-void UGloveComponent::GetVRDevicePropertyInt32(EVRDeviceProperty_Int32 PropertyToRetrieve, int32 DeviceID, int32 & IntValue, EBPOVRResultSwitch & Result)
-{
-#if !STEAMVR_SUPPORTED_PLATFORM
-	Result = EBPOVRResultSwitch::OnFailed;
-	return;
-#else
-	vr::TrackedPropertyError pError = vr::TrackedPropertyError::TrackedProp_Success;
-	vr::ETrackedDeviceProperty EnumPropertyValue = VREnumToString(TEXT("EVRDeviceProperty_Int32"), static_cast<uint8>(PropertyToRetrieve));
-	if (EnumPropertyValue == vr::ETrackedDeviceProperty::Prop_Invalid)
-	{
-		Result = EBPOVRResultSwitch::OnFailed;
-		return;
-	}
-	int32 ret = VRSystem->GetInt32TrackedDeviceProperty(DeviceID, EnumPropertyValue, &pError);
-	if (pError != vr::TrackedPropertyError::TrackedProp_Success)
-	{
-		Result = EBPOVRResultSwitch::OnFailed;
-		return;
-	}
-	IntValue = ret;
-	Result = EBPOVRResultSwitch::OnSucceeded;
-	return;
-
-#endif
-}
-
-void UGloveComponent::GetVRDevicePropertyUInt64(EVRDeviceProperty_UInt64 PropertyToRetrieve, int32 DeviceID, FString & UInt64Value, EBPOVRResultSwitch & Result)
-{
-#if !STEAMVR_SUPPORTED_PLATFORM
-	Result = EBPOVRResultSwitch::OnFailed;
-	return;
-#else
-	vr::TrackedPropertyError pError = vr::TrackedPropertyError::TrackedProp_Success;
-	vr::ETrackedDeviceProperty EnumPropertyValue = VREnumToString(TEXT("EVRDeviceProperty_UInt64"), static_cast<uint8>(PropertyToRetrieve));
-	if (EnumPropertyValue == vr::ETrackedDeviceProperty::Prop_Invalid)
-	{
-		Result = EBPOVRResultSwitch::OnFailed;
-		return;
-	}
-	uint64 ret = VRSystem->GetUint64TrackedDeviceProperty(DeviceID, EnumPropertyValue, &pError);
-	if (pError != vr::TrackedPropertyError::TrackedProp_Success)
-	{
-		Result = EBPOVRResultSwitch::OnFailed;
-		return;
-	}
-	UInt64Value = FString::Printf(TEXT("%llu"), ret);
-	Result = EBPOVRResultSwitch::OnSucceeded;
-	return;
-
-#endif
-}
-
 bool FMyGesture::TriggerPositionCheck(TArray<float> Current_Position)
 {
 	int upper_num = this->Upper_bound.Num() - 1;
