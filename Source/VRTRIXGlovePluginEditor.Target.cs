@@ -9,6 +9,8 @@ public class VRTRIXGlovePluginEditorTarget : TargetRules
 	{
 		Type = TargetType.Editor;
 
-		ExtraModuleNames.AddRange( new string[] { "VRTRIXGlovePlugin" } );
+        DefaultBuildSettings = BuildSettingsVersion.V5;
+
+        ExtraModuleNames.AddRange( new string[] { "VRTRIXGlovePlugin" } );
 	}
 }

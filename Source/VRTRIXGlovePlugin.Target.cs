@@ -9,6 +9,8 @@ public class VRTRIXGlovePluginTarget : TargetRules
 	{
 		Type = TargetType.Game;
 
-		ExtraModuleNames.AddRange( new string[] { "VRTRIXGlovePlugin" } );
+        DefaultBuildSettings = BuildSettingsVersion.V5;
+
+        ExtraModuleNames.AddRange( new string[] { "VRTRIXGlovePlugin" } );
 	}
 }
